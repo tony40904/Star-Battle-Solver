@@ -1,5 +1,4 @@
 import pynput, pyautogui
-from pynput import keyboard
 import numpy as np
 
 class Parser:
@@ -9,46 +8,23 @@ class Parser:
     size = 0
     image = None
     block_label = []
-    quit_sign = False
 
-    def __init__(self, c = None, l = None) -> None:
+    def __init__(self) -> None:
         self.mouse = pynput.mouse.Controller()
-        self.count = 0
-        self.corner = c
-        self.length = l
+        self.top_left = None
+        self.bottom_right = None
 
-    def on_press(self, key):
-        try:
-            if key.char == 'r':
-                self.count = 0
-                self.corner = None
-                self.length = None
-            elif key.char == 'p':
-                if self.count == 0:
-                    x, y = self.mouse.position
-                    self.corner = (int(x), int(y))
-                    self.count += 1
-                elif self.count == 1:
-                    x, y = self.mouse.position
-                    self.length = (int(x) - self.corner[0], int(y) - self.corner[1])
-                    self.count += 1
-                    return False
-            elif key.char == 'c':
-                if self.corner and self.length:
-                    return False
-            elif key.char == 'q':
-                self.quit_sign = True
-                return False
-        except:
-            pass
+    def set_top_left(self):
+        x, y = self.mouse.position
+        self.top_left = (int(x), int(y))
 
-    def on_release(self, key):
-        pass
+    def set_bottom_right(self):
+        x, y = self.mouse.position
+        self.bottom_right = (int(x), int(y))
 
-    def locate(self):
-        with keyboard.Listener(on_press=self.on_press) as listener:
-            listener.join()
-        return self.corner, self.length
+    def reset(self):
+        self.top_left = None
+        self.bottom_right = None
 
     def is_connect(self, p1, p2):
         image_shape = np.array(self.image.shape)
@@ -64,7 +40,6 @@ class Parser:
             elif count > 0:
                 break
             start += step
-
 
         return count < self.threshold
 
@@ -91,7 +66,8 @@ class Parser:
         self.size = size
 
     def parse(self):
-        im = pyautogui.screenshot(region=(self.scale * self.corner[0], self.scale * self.corner[1], self.scale * self.length[0], self.scale * self.length[1])).convert('L')
+        length = (self.bottom_right[0] - self.top_left[0], self.bottom_right[1] - self.top_left[1])
+        im = pyautogui.screenshot(region=(self.scale * self.top_left[0], self.scale * self.top_left[1], self.scale * length[0], self.scale * length[1])).convert('L')
         
         self.image = np.array(im)
         self.find_size_and_thres()
@@ -118,11 +94,3 @@ class Parser:
                     id += 1
         return self.block_label
 
-if __name__ == '__main__':
-    parser = Parser()
-    parser.locate()
-    print(parser.corner, parser.length)
-    parser.parse()
-    print(parser.image.shape)
-    for row in parser.block_label:
-        print(row)
