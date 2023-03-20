@@ -10,3 +10,5 @@ It solves the puzzle and automatically fills out the grid.
 ```
 python3 main.py
 ```
+## Screenshot
+![](https://github.com/tony40904/Star-Battle-Solver/blob/main/Screenshot.png)
